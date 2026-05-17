@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignVerse — Learn Sign Language</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050810;
+    --surface: #0d1117;
+    --surface2: #161b27;
+    --border: rgba(99,102,241,0.15);
+    --accent: #6366f1;
+    --accent2: #22d3ee;
+    --accent3: #f59e0b;
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --success: #10b981;
+    --danger: #ef4444;
+    --glow: rgba(99,102,241,0.4);
+    --glow2: rgba(34,211,238,0.3);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- BACKGROUND ---- */
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+  .bg-orb {
+    position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0;
+  }
+  .bg-orb-1 { width:500px; height:500px; background:rgba(99,102,241,0.12); top:-100px; right:-100px; }
+  .bg-orb-2 { width:400px; height:400px; background:rgba(34,211,238,0.08); bottom:-50px; left:-100px; }
+
+  /* ---- MODAL OVERLAY ---- */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(5,8,16,0.85);
+    backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn 0.3s ease;
+  }
+  .modal-overlay.hidden { display: none; }
+
+  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+  @keyframes slideUp { from { opacity:0; transform:translateY(30px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes pulse-ring { 0%,100%{box-shadow:0 0 0 0 var(--glow)} 50%{box-shadow:0 0 0 12px transparent} }
+
+  .auth-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px;
+    width: 460px;
+    max-width: calc(100vw - 40px);
+    animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1);
+    overflow: hidden;
+  }
+  .auth-card::before {
+    content:'';
+    position: absolute; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+  }
+
+  .auth-logo {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 32px;
+  }
+  .auth-logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .auth-logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 800;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .auth-title { font-family:'Syne',sans-serif; font-size:28px; font-weight:700; margin-bottom:6px; }
+  .auth-sub { color: var(--text-muted); font-size:14px; margin-bottom:32px; }
+
+  .tab-switcher {
+    display: flex; gap:4px; margin-bottom:28px;
+    background: var(--surface2); border-radius: 12px; padding: 4px;
+  }
+  .tab-btn {
+    flex:1; padding: 10px; border: none; border-radius: 9px;
+    cursor: pointer; font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 500;
+    transition: all 0.2s;
+    color: var(--text-muted); background: transparent;
+  }
+  .tab-btn.active {
+    background: var(--accent); color: white;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+  }
+
+  .form-group { margin-bottom: 18px; }
+  .form-label { display:block; font-size:13px; font-weight:500; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; }
+  .form-input {
+    width: 100%; padding: 14px 18px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text);
+    font-family: 'DM Sans',sans-serif; font-size: 15px;
+    outline: none; transition: all 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+  .form-input::placeholder { color: var(--text-muted); }
+
+  .btn-primary {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    border: none; border-radius: 12px;
+    color: white; font-family: 'Syne',sans-serif; font-size:15px; font-weight:600;
+    cursor: pointer; transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 24px var(--glow); }
+  .btn-primary:active { transform:translateY(0); }
+  .btn-primary:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+  .error-msg { color:var(--danger); font-size:13px; margin-top:12px; display:none; }
+  .error-msg.show { display:block; }
+
+  /* ---- MAIN APP ---- */
+  .app { position:relative; z-index:1; display:none; min-height:100vh; }
+  .app.visible { display:flex; flex-direction:column; }
+
+  /* NAVBAR */
+  .navbar {
+    position: sticky; top:0; z-index:100;
+    display: flex; align-items:center; justify-content:space-between;
+    padding: 0 32px; height: 68px;
+    background: rgba(5,8,16,0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-brand {
+    display:flex; align-items:center; gap:10px;
+    font-family:'Syne',sans-serif; font-size:20px; font-weight:800;
+    background: linear-gradient(135deg, var(--text), var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .nav-brand-icon {
+    width:36px; height:36px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+  }
+  .nav-links { display:flex; align-items:center; gap:4px; }
+  .nav-link {
+    padding:8px 16px; border-radius:10px;
+    color:var(--text-muted); font-size:14px; font-weight:500;
+    cursor:pointer; transition:all 0.2s; border:none; background:transparent; text-decoration:none;
+  }
+  .nav-link:hover, .nav-link.active { color:var(--text); background:var(--surface2); }
+  .nav-user {
+    display:flex; align-items:center; gap:12px;
+  }
+  .user-avatar {
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:white;
+    border: 2px solid var(--border);
+  }
+  .btn-logout {
+    padding:7px 14px; border-radius:8px;
+    border:1px solid var(--border); background:transparent;
+    color:var(--text-muted); font-size:13px; cursor:pointer; transition:all 0.2s;
+  }
+  .btn-logout:hover { border-color:var(--danger); color:var(--danger); }
+
+  /* PAGES */
+  .page { display:none; flex:1; padding:32px; max-width:1200px; margin:0 auto; width:100%; }
+  .page.active { display:block; animation:fadeIn 0.3s ease; }
+
+  /* HERO / HOME */
+  .hero {
+    text-align:center; padding:60px 0 48px;
+  }
+  .hero-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:8px 18px; border-radius:999px;
+    border:1px solid rgba(34,211,238,0.3);
+    background:rgba(34,211,238,0.06);
+    color:var(--accent2); font-size:13px; margin-bottom:24px;
+  }
+  .hero-badge span { width:6px;height:6px; border-radius:50%; background:var(--accent2); animation:pulse-ring 2s infinite; }
+  .hero h1 {
+    font-family:'Syne',sans-serif; font-size:clamp(40px,6vw,72px); font-weight:800;
+    line-height:1.1; margin-bottom:20px;
+  }
+  .hero h1 span {
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .hero p { color:var(--text-muted); font-size:18px; max-width:520px; margin:0 auto 36px; line-height:1.6; }
+  .hero-cta { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+  .btn-cta {
+    padding:14px 28px; border-radius:14px;
+    font-family:'Syne',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.2s;
+    border:none;
+  }
+  .btn-cta-primary {
+    background:linear-gradient(135deg,var(--accent),#818cf8); color:white;
+  }
+  .btn-cta-primary:hover { transform:translateY(-2px); box-shadow:0 12px 32px var(--glow); }
+  .btn-cta-secondary {
+    background:var(--surface2); color:var(--text);
+    border:1px solid var(--border);
+  }
+  .btn-cta-secondary:hover { border-color:var(--accent); }
+
+  /* STATS ROW */
+  .stats-row {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:48px 0;
+  }
+  .stat-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px;
+    position:relative; overflow:hidden; transition:border-color 0.2s;
+  }
+  .stat-card:hover { border-color:var(--accent); }
+  .stat-card::after {
+    content:''; position:absolute; inset:0; opacity:0;
+    background:radial-gradient(circle at 50% 0%, rgba(99,102,241,0.1), transparent 70%);
+    transition:opacity 0.3s;
+  }
+  .stat-card:hover::after { opacity:1; }
+  .stat-icon { font-size:28px; margin-bottom:12px; }
+  .stat-value { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; margin-bottom:4px; }
+  .stat-label { color:var(--text-muted); font-size:13px; }
+
+  /* SECTION HEADERS */
+  .section-header { margin-bottom:28px; }
+  .section-title { font-family:'Syne',sans-serif; font-size:24px; font-weight:700; margin-bottom:6px; }
+  .section-sub { color:var(--text-muted); font-size:14px; }
+
+  /* WEBCAM SECTION */
+  .webcam-container {
+    display:grid; grid-template-columns:1fr 340px; gap:24px; align-items:start;
+  }
+  @media(max-width:900px) { .webcam-container { grid-template-columns:1fr; } }
+
+  .cam-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px; overflow:hidden;
+  }
+  .cam-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .cam-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:600; }
+  .cam-status { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted); }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--text-muted); }
+  .status-dot.live { background:var(--success); animation:pulse-ring 1.5s infinite; }
+
+  .cam-body { position:relative; background:#000; aspect-ratio:16/9; }
+  .cam-body video, .cam-body canvas { width:100%; height:100%; object-fit:cover; }
+  .cam-body canvas { position:absolute; inset:0; }
+  .cam-placeholder {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    color:var(--text-muted); font-size:14px;
+  }
+  .cam-placeholder-icon { font-size:48px; opacity:0.3; }
+
+  .cam-footer { padding:20px 24px; display:flex; gap:12px; flex-wrap:wrap; }
+
+  .btn-cam {
+    padding:10px 20px; border-radius:10px;
+    font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500;
+    cursor:pointer; transition:all 0.2s; border:1px solid var(--border);
+    background:var(--surface2); color:var(--text);
+  }
+  .btn-cam:hover { border-color:var(--accent); }
+  .btn-cam.active { background:var(--accent); border-color:var(--accent); color:white; }
+  .btn-cam.danger { border-color:var(--danger); color:var(--danger); }
+  .btn-cam.danger:hover { background:var(--danger); color:white; }
+
+  /* TTS PANEL */
+  .tts-panel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .tts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tts-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tts-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .tts-switch {
+    width: 36px; height: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+  }
+  .tts-switch::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .tts-switch.on {
+    background: rgba(99,102,241,0.25);
+    border-color: var(--accent);
+  }
+  .tts-switch.on::after {
+    transform: translateX(16px);
+    background: var(--accent);
+  }
+  .tts-word-display {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    padding: 12px;
+    background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    letter-spacing: 0.3px;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .tts-word-display.speaking {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+  }
+  .tts-word-display .tts-wave {
+    display: none;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
+    background-size: 200% 100%;
+    animation: waveMove 1s linear infinite;
+    border-radius: 0 0 12px 12px;
+  }
+  .tts-word-display.speaking .tts-wave { display: block; }
+  @keyframes waveMove { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }
+
+  .tts-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .btn-speak {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--accent);
+    background: rgba(99,102,241,0.1);
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-speak:hover { background: rgba(99,102,241,0.2); box-shadow: 0 4px 12px rgba(99,102,241,0.2); }
+  .btn-speak:active { transform: scale(0.97); }
+  .btn-speak:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-speak-stop {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-speak-stop:hover { border-color: var(--danger); color: var(--danger); }
+
+  .tts-settings {
+    display: flex;
+    gap: 13px;
+    align-items: center;
+  }
+ .tts-select {
+  flex: 1;
+  max-width: 100%;   /* IMPORTANT */
+  width: 100%;       /* IMPORTANT */
+  min-width: 0;      /* prevents flex overflow bug */
+
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+  .tts-select:focus { border-color: var(--accent); }
+  .tts-rate-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 70px;   /* controlled width */
+  flex-shrink: 0;    /* prevents shrinking issues */
+}
+  .tts-rate-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .tts-range {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--surface);
+    border-radius: 999px;
+    outline: none;
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .tts-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(99,102,241,0.4);
+  }
+
+  /* RESULT PANEL */
+  .result-panel {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:24px;
+    display:flex; flex-direction:column; gap:20px; min-height:400px;
+  }
+  .result-gesture {
+    text-align:center; padding:32px 16px;
+    background:var(--surface2); border-radius:16px;
+    border:1px solid var(--border);
+  }
+  .gesture-letter {
+    font-family:'Syne',sans-serif; font-size:72px; font-weight:800;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    line-height:1; margin-bottom:8px;
+  }
+  .gesture-name { font-size:16px; font-weight:500; margin-bottom:4px; }
+  .gesture-desc { color:var(--text-muted); font-size:13px; }
+  .confidence-bar { margin-top:16px; }
+  .conf-label { display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px; }
+  .conf-track { height:6px; background:var(--surface); border-radius:999px; overflow:hidden; }
+  .conf-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width 0.5s ease; }
+
+  .result-history { flex:1; }
+  .history-title { font-size:13px; font-weight:500; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; }
+  .history-list { display:flex; flex-direction:column; gap:8px; max-height:250px; overflow-y:auto; }
+  .history-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; background:var(--surface2); border-radius:10px;
+    border:1px solid var(--border); font-size:13px;
+  }
+  .history-item-gesture { font-family:'Syne',sans-serif; font-weight:600; }
+  .history-item-time { color:var(--text-muted); font-size:12px; }
+
+  /* GESTURE GUIDE */
+  .gesture-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:12px;
+  }
+  .gesture-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 12px;
+    text-align:center; cursor:pointer; transition:all 0.2s;
+  }
+  .gesture-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 8px 24px rgba(99,102,241,0.15); }
+  .gesture-card-letter { font-family:'Syne',sans-serif; font-size:32px; font-weight:800; color:var(--accent); }
+  .gesture-card-label { font-size:11px; color:var(--text-muted); margin-top:4px; }
+
+  /* PROGRESS PAGE */
+  .progress-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  @media(max-width:700px) { .progress-grid { grid-template-columns:1fr; } }
+
+  .prog-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:24px;
+  }
+  .prog-card-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:600; margin-bottom:20px; }
+  .prog-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 0; border-bottom:1px solid var(--border);
+  }
+  .prog-item:last-child { border-bottom:none; }
+  .prog-item-name { font-size:14px; }
+  .prog-item-stat { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; color:var(--accent); }
+
+  .leaderboard-item {
+    display:flex; align-items:center; gap:14px; padding:14px;
+    background:var(--surface2); border-radius:12px; margin-bottom:10px;
+    border:1px solid var(--border);
+  }
+  .lb-rank { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; width:28px; text-align:center; color:var(--text-muted); }
+  .lb-rank.gold { color:var(--accent3); }
+  .lb-rank.silver { color:#94a3b8; }
+  .lb-rank.bronze { color:#92400e; }
+  .lb-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:white; }
+  .lb-name { flex:1; font-weight:500; }
+  .lb-count { font-family:'Syne',sans-serif; font-weight:700; color:var(--accent2); }
+
+  /* TOAST */
+  .toast-container { position:fixed; bottom:24px; right:24px; z-index:2000; display:flex; flex-direction:column; gap:10px; }
+  .toast {
+    padding:14px 20px; border-radius:12px; min-width:260px;
+    display:flex; align-items:center; gap:12px;
+    background:var(--surface2); border:1px solid var(--border);
+    font-size:14px; animation:slideUp 0.3s ease;
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.success { border-color:var(--success); }
+  .toast.error { border-color:var(--danger); }
+  .toast-icon { font-size:18px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--surface); }
+  ::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:999px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--accent); }
+
+  /* Loading spinner */
+  .spinner {
+    width:20px; height:20px; border:2px solid rgba(255,255,255,0.2);
+    border-top-color:white; border-radius:50%; animation:spin 0.8s linear infinite;
+    display:inline-block;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🤟</div>
+      <div class="auth-logo-text">SignVerse</div>
+    </div>
+    <h2 class="auth-title" id="authTitle">Welcome back</h2>
+    <p class="auth-sub" id="authSub">Sign in to continue your learning journey</p>
+
+    <div class="tab-switcher">
+      <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Username or Email</label>
+        <input class="form-input" type="text" id="loginIdentifier" placeholder="your@email.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <button class="btn-primary" onclick="doLogin()" id="loginBtn">Sign In</button>
+      <p class="error-msg" id="loginError"></p>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="registerForm" class="hidden">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" type="text" id="regUsername" placeholder="cooluser123" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="regEmail" placeholder="your@email.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="regPassword" placeholder="Min. 6 characters" onkeydown="if(event.key==='Enter')doRegister()" />
+      </div>
+      <button class="btn-primary" onclick="doRegister()" id="registerBtn">Create Account</button>
+      <p class="error-msg" id="registerError"></p>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="mainApp">
+  <nav class="navbar">
+    <div class="nav-brand"><div class="nav-brand-icon">🤟</div>SignVerse</div>
+    <div class="nav-links">
+      <button class="nav-link active" onclick="showPage('home',this)">Home</button>
+      <button class="nav-link" onclick="showPage('learn',this)">Learn</button>
+      <button class="nav-link" onclick="showPage('progress',this)">Progress</button>
+      <button class="nav-link" onclick="showPage('dataset',this)">Dataset</button>
+    </div>
+    <div class="nav-user">
+      <div class="user-avatar" id="userAvatar"></div>
+      <span id="userNameNav" style="font-size:14px;font-weight:500;"></span>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- HOME PAGE -->
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <div class="hero-badge"><span></span>Live gesture recognition powered by MediaPipe</div>
+      <h1>Learn <span>Sign Language</span><br>with AI Feedback</h1>
+      <p>Practice ASL gestures in real-time with instant detection and personalized progress tracking.</p>
+      <div class="hero-cta">
+        <button class="btn-cta btn-cta-primary" onclick="showPage('learn',document.querySelector('.nav-link:nth-child(2)'))">Start Practicing</button>
+        <button class="btn-cta btn-cta-secondary" onclick="showPage('dataset',document.querySelector('.nav-link:nth-child(4)'))">View Dataset</button>
+      </div>
+    </div>
+    <div class="stats-row" id="homeStats">
+      <div class="stat-card"><div class="stat-icon">🤟</div><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Gestures</div></div>
+      <div class="stat-card"><div class="stat-icon">✨</div><div class="stat-value" id="statUnique">0</div><div class="stat-label">Unique Gestures</div></div>
+      <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-value" id="statStreak">0</div><div class="stat-label">Day Streak</div></div>
+      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value" id="statToday">0</div><div class="stat-label">Today's Practice</div></div>
+    </div>
+  </div>
+
+  <!-- LEARN PAGE -->
+  <div class="page" id="page-learn">
+    <div class="section-header">
+      <div class="section-title">🎥 Live Practice</div>
+      <div class="section-sub">Show your hand gestures to the camera for real-time ASL detection</div>
+    </div>
+    <div class="webcam-container">
+      <div class="cam-card">
+        <div class="cam-header">
+          <span class="cam-title">Webcam Feed</span>
+          <div class="cam-status">
+            <div class="status-dot" id="camStatusDot"></div>
+            <span id="camStatusText">Not started</span>
+          </div>
+        </div>
+        <div class="cam-body">
+          <video id="webcamVideo" autoplay playsinline muted></video>
+          <canvas id="overlayCanvas"></canvas>
+          <div class="cam-placeholder" id="camPlaceholder">
+            <div class="cam-placeholder-icon">📷</div>
+            <div>Click "Start Camera" to begin</div>
+          </div>
+        </div>
+        <div class="cam-footer">
+          <button class="btn-cam" id="btnStart" onclick="startCamera()">▶ Start Camera</button>
+          <button class="btn-cam danger hidden" id="btnStop" onclick="stopCamera()">■ Stop</button>
+          <button class="btn-cam hidden" id="btnCapture" onclick="captureAndDetect()">📸 Detect</button>
+          <button class="btn-cam hidden" id="btnAuto" onclick="toggleAuto()">🔄 Auto Detect</button>
+        </div>
+      </div>
+
+      <div class="result-panel">
+        <div class="result-gesture" id="gestureResult">
+          <div class="gesture-letter" id="gestureLetter">—</div>
+          <div class="gesture-name" id="gestureName">No gesture detected</div>
+          <div class="gesture-desc" id="gestureDesc">Position your hand in camera view</div>
+          <div class="confidence-bar">
+            <div class="conf-label"><span>Confidence</span><span id="confPercent">0%</span></div>
+            <div class="conf-track"><div class="conf-fill" id="confFill" style="width:0%"></div></div>
+          </div>
+        </div>
+        <!-- TEXT TO SPEECH PANEL -->
+        <div class="tts-panel">
+          <div class="tts-header">
+            <div class="tts-title">🔊 Text to Speech</div>
+            <label class="tts-toggle" title="Auto-speak on every detection">
+              <span id="ttsAutoLabel">Auto Speak</span>
+              <div class="tts-switch" id="ttsSwitch" onclick="toggleTTSAuto()"></div>
+            </label>
+          </div>
+          <div class="tts-word-display" id="ttsWordDisplay">
+            <span id="ttsWord">—</span>
+            <div class="tts-wave"></div>
+          </div>
+          <div class="tts-controls">
+            <button class="btn-speak" id="btnSpeak" onclick="speakCurrent()" disabled>
+              🔊 Speak
+            </button>
+            <button class="btn-speak-stop" id="btnSpeakStop" onclick="stopSpeech()" title="Stop">■</button>
+          </div>
+          <div class="tts-settings">
+           <select class="tts-select" id="ttsVoiceSelect" onchange="updateVoice()">
+  <option value="female">Female</option>
+  <option value="male">Male</option>
+</select>
+            <div class="tts-rate-wrap">
+              <div class="tts-rate-label">
+                <span>Speed</span>
+                <span id="ttsRateVal">1×</span>
+              </div>
+              <input class="tts-range" type="range" id="ttsRate" min="0.5" max="2" step="0.1" value="1"
+                     oninput="document.getElementById('ttsRateVal').textContent=parseFloat(this.value).toFixed(1)+'×'">
+            </div>
+          </div>
+        </div>
+
+        <div class="result-history">
+          <div class="history-title">Recent Detections</div>
+          <div class="history-list" id="historyList">
+            <div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px;">No detections yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS PAGE -->
+  <div class="page" id="page-progress">
+    <div class="section-header">
+      <div class="section-title">📊 Your Progress</div>
+      <div class="section-sub">Track your learning journey and compete on the leaderboard</div>
+    </div>
+    <div class="progress-grid">
+      <div class="prog-card">
+        <div class="prog-card-title">🏆 Top Practiced Gestures</div>
+        <div id="topGestures"><div style="color:var(--text-muted);font-size:14px;">Loading...</div></div>
+      </div>
+      <div class="prog-card">
+        <div class="prog-card-title">🌍 Leaderboard</div>
+        <div id="leaderboard"><div style="color:var(--text-muted);font-size:14px;">Loading...</div></div>
+      </div>
+    </div>
+    <div style="margin-top:24px;">
+      <div class="prog-card">
+        <div class="prog-card-title">📜 Recent Activity</div>
+        <div id="recentActivity"><div style="color:var(--text-muted);font-size:14px;">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATASET PAGE -->
+  <div class="page" id="page-dataset">
+    <div class="section-header">
+      <div class="section-title">🗂️ Built-in ASL Dataset</div>
+      <div class="section-sub">Powered by Kaggle ASL Gesture Dataset — 32 gestures including full alphabet</div>
+    </div>
+    <div style="margin-bottom:24px;">
+      <input class="form-input" style="max-width:320px;" type="text" placeholder="Search gestures..." id="gestureSearch" oninput="filterGestures(this.value)" />
+    </div>
+    <div class="gesture-grid" id="gestureGrid"></div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('signverse_token');
+let currentUser = null;
+let stream = null;
+let autoDetect = false;
+let autoInterval = null;
+let localHistory = [];
+
+// ---- AUTH ----
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('loginForm').classList.toggle('hidden', tab!=='login');
+  document.getElementById('registerForm').classList.toggle('hidden', tab!=='register');
+  document.getElementById('authTitle').textContent = tab==='login' ? 'Welcome back' : 'Create account';
+  document.getElementById('authSub').textContent = tab==='login' ? 'Sign in to continue your learning journey' : 'Join thousands learning sign language';
+}
+
+async function doLogin() {
+  const identifier = document.getElementById('loginIdentifier').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  if (!identifier || !password) { showErr(err,'Please fill all fields'); return; }
+  btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true;
+  try {
+    const r = await fetch(`${API}/api/auth/login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier,password})});
+    const d = await r.json();
+    if (!r.ok) { showErr(err, d.error); return; }
+    token = d.token; currentUser = d.user;
+    localStorage.setItem('signverse_token', token);
+    enterApp();
+  } catch(e) { showErr(err,'Connection error. Is the server running?'); }
+  finally { btn.innerHTML='Sign In'; btn.disabled=false; }
+}
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const btn = document.getElementById('registerBtn');
+  const err = document.getElementById('registerError');
+  if (!username||!email||!password) { showErr(err,'Please fill all fields'); return; }
+  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
+  try {
+    const r = await fetch(`${API}/api/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,password})});
+    const d = await r.json();
+    if (!r.ok) { showErr(err,d.error); return; }
+    token = d.token; currentUser = d.user;
+    localStorage.setItem('signverse_token', token);
+    enterApp();
+    showToast('Account created! Welcome to SignVerse 🎉','success');
+  } catch(e) { showErr(err,'Connection error. Is the server running?'); }
+  finally { btn.innerHTML='Create Account'; btn.disabled=false; }
+}
+
+function showErr(el,msg) { el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),4000); }
+
+async function doLogout() {
+  try { await authFetch('/api/auth/logout',{method:'POST'}); } catch(e){}
+  token=null; currentUser=null;
+  localStorage.removeItem('signverse_token');
+  stopCamera();
+  document.getElementById('mainApp').classList.remove('visible');
+  document.getElementById('authModal').classList.remove('hidden');
+}
+
+async function checkAuth() {
+  if (!token) { return; }
+  try {
+    const r = await authFetch('/api/auth/me');
+    if (r.ok) { currentUser = await r.json(); enterApp(); }
+    else { localStorage.removeItem('signverse_token'); token=null; }
+  } catch(e) {}
+}
+
+function enterApp() {
+  document.getElementById('authModal').classList.add('hidden');
+  document.getElementById('mainApp').classList.add('visible');
+  const av = document.getElementById('userAvatar');
+  av.textContent = currentUser.username[0].toUpperCase();
+  av.style.background = currentUser.avatar_color || '#6366f1';
+  document.getElementById('userNameNav').textContent = currentUser.username;
+  // Redirect admin
+  if (currentUser.role === 'admin') {
+    window.location.href = '/admin';
+    return;
+  }
+  loadStats();
+}
+
+function authFetch(url, opts={}) {
+  return fetch(API+url, {...opts, headers:{...opts.headers,'Content-Type':'application/json','Authorization':'Bearer '+token}});
+}
+
+// ---- NAVIGATION ----
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(name==='progress') loadProgress();
+  if(name==='dataset') loadDataset();
+}
+
+// ---- STATS ----
+async function loadStats() {
+  try {
+    const r = await authFetch('/api/user/stats');
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('statTotal').textContent = d.total_gestures;
+    document.getElementById('statUnique').textContent = d.unique_gestures;
+    document.getElementById('statStreak').textContent = d.streak_days;
+    document.getElementById('statToday').textContent = d.today_gestures;
+  } catch(e){}
+}
+
+// ---- WEBCAM ----
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}});
+    const video = document.getElementById('webcamVideo');
+    video.srcObject = stream;
+    document.getElementById('camPlaceholder').classList.add('hidden');
+    document.getElementById('btnStart').classList.add('hidden');
+    document.getElementById('btnStop').classList.remove('hidden');
+    document.getElementById('btnCapture').classList.remove('hidden');
+    document.getElementById('btnAuto').classList.remove('hidden');
+    document.getElementById('camStatusDot').classList.add('live');
+    document.getElementById('camStatusText').textContent = 'Camera active';
+    showToast('Camera started — show your hand gesture!','success');
+  } catch(e) {
+    showToast('Camera access denied. Please allow camera permissions.','error');
+  }
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  if (autoInterval) { clearInterval(autoInterval); autoInterval=null; autoDetect=false; }
+  document.getElementById('btnAuto').classList.remove('active');
+  document.getElementById('btnAuto').textContent='🔄 Auto Detect';
+  document.getElementById('camPlaceholder').classList.remove('hidden');
+  document.getElementById('btnStart').classList.remove('hidden');
+  document.getElementById('btnStop').classList.add('hidden');
+  document.getElementById('btnCapture').classList.add('hidden');
+  document.getElementById('btnAuto').classList.add('hidden');
+  document.getElementById('camStatusDot').classList.remove('live');
+  document.getElementById('camStatusText').textContent='Not started';
+}
+
+function toggleAuto() {
+  autoDetect = !autoDetect;
+  const btn = document.getElementById('btnAuto');
+  if (autoDetect) {
+    btn.classList.add('active'); btn.textContent='⏸ Auto ON';
+    autoInterval = setInterval(captureAndDetect, 1500);
+    showToast('Auto-detection enabled','success');
+  } else {
+    btn.classList.remove('active'); btn.textContent='🔄 Auto Detect';
+    clearInterval(autoInterval); autoInterval=null;
+  }
+}
+
+async function captureAndDetect() {
+  const video = document.getElementById('webcamVideo');
+  if (!video.srcObject) return;
+  const canvas = document.createElement('canvas');
+  canvas.width=640; canvas.height=480;
+  canvas.getContext('2d').drawImage(video,0,0,640,480);
+  const imageData = canvas.toDataURL('image/jpeg',0.8);
+  try {
+    const r = await authFetch('/api/gesture/detect',{method:'POST',body:JSON.stringify({image:imageData,source:'webcam'})});
+    const d = await r.json();
+    if (d.detected && d.results && d.results.length > 0) {
+      const res = d.results[0];
+      updateResult(res);
+      addToHistory(res);
+      loadStats();
+    } else if (!d.detected) {
+      document.getElementById('gestureLetter').textContent='—';
+      document.getElementById('gestureName').textContent='No hand detected';
+      document.getElementById('gestureDesc').textContent='Make sure your hand is visible in the frame';
+    }
+  } catch(e) {
+    showToast('Detection failed — is the server running?','error');
+  }
+}
+
+function updateResult(res) {
+  document.getElementById('gestureLetter').textContent = res.word || res.gesture;
+  document.getElementById('gestureName').textContent = 'Gesture: ' + res.gesture;
+  document.getElementById('gestureDesc').textContent = res.description;
+  const pct = Math.round(res.confidence * 100);
+  document.getElementById('confPercent').textContent = pct + '%';
+  document.getElementById('confFill').style.width = pct + '%';
+  updateTTSWord(res.word || res.gesture);
+}
+
+function addToHistory(res) {
+  localHistory.unshift({gesture:res.gesture, word:res.word||res.gesture, time:new Date().toLocaleTimeString()});
+  if (localHistory.length > 20) localHistory.pop();
+  const list = document.getElementById('historyList');
+  list.innerHTML = localHistory.map(h=>
+    `<div class="history-item">
+      <span class="history-item-gesture">${h.word}</span>
+      <span class="history-item-time">${h.time}</span>
+    </div>`
+  ).join('');
+}
+
+// ---- PROGRESS ----
+async function loadProgress() {
+  try {
+    const [statsR, lbR] = await Promise.all([authFetch('/api/user/stats'), authFetch('/api/user/leaderboard')]);
+    const stats = await statsR.json();
+    const lb = await lbR.json();
+
+    // Top gestures
+    document.getElementById('topGestures').innerHTML = stats.top_gestures && stats.top_gestures.length
+      ? stats.top_gestures.map(g=>`<div class="prog-item"><span class="prog-item-name">${g.gesture_label}</span><span class="prog-item-stat">${g.count}×</span></div>`).join('')
+      : '<p style="color:var(--text-muted);font-size:14px;">No data yet. Start practicing!</p>';
+
+    // Leaderboard
+    const rankClasses = ['gold','silver','bronze'];
+    document.getElementById('leaderboard').innerHTML = lb.leaderboard && lb.leaderboard.length
+      ? lb.leaderboard.map((u,i)=>`
+        <div class="leaderboard-item">
+          <div class="lb-rank ${rankClasses[i]||''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
+          <div class="lb-avatar" style="background:${u.avatar_color||'#6366f1'}">${u.username[0].toUpperCase()}</div>
+          <div class="lb-name">${u.username}</div>
+          <div class="lb-count">${u.total}</div>
+        </div>`).join('')
+      : '<p style="color:var(--text-muted);font-size:14px;">No data yet</p>';
+
+    // Recent activity
+    document.getElementById('recentActivity').innerHTML = stats.recent && stats.recent.length
+      ? `<div class="history-list" style="max-height:300px;">${stats.recent.map(r=>`
+          <div class="history-item">
+            <span class="history-item-gesture">${r.gesture_label}</span>
+            <span>${Math.round(r.confidence*100)}%</span>
+            <span class="history-item-time">${new Date(r.detected_at).toLocaleString()}</span>
+          </div>`).join('')}</div>`
+      : '<p style="color:var(--text-muted);font-size:14px;">No activity yet.</p>';
+  } catch(e) { console.error(e); }
+}
+
+// ---- DATASET ----
+let allGestures = [];
+async function loadDataset() {
+  if (allGestures.length) { renderGestures(allGestures); return; }
+  try {
+    const r = await fetch(`${API}/api/gesture/dataset`);
+    const d = await r.json();
+    allGestures = d.gestures;
+    renderGestures(allGestures);
+  } catch(e){}
+}
+function renderGestures(list) {
+  document.getElementById('gestureGrid').innerHTML = list.map(g=>`
+    <div class="gesture-card" title="${g.description}" onclick="showToast('${g.label}: ${g.description}','success')">
+      <div class="gesture-card-letter">${g.label}</div>
+      <div class="gesture-card-label">${g.category}</div>
+    </div>`).join('');
+}
+function filterGestures(q) {
+  renderGestures(allGestures.filter(g=>g.label.toLowerCase().includes(q.toLowerCase())||g.description.toLowerCase().includes(q.toLowerCase())));
+}
+
+// ---- TOAST ----
+function showToast(msg, type='success') {
+  const icons = {success:'✅',error:'❌',info:'ℹ️'};
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+// ---- TEXT TO SPEECH ----
+// ---- TEXT TO SPEECH ----
+let maleVoice = null;
+let femaleVoice = null;
+let ttsSelectedVoice = null;
+let ttsAutoSpeak = false;
+let ttsCurrentWord = null;
+let ttsSpeaking = false;
+
+function initTTS() {
+  if (!('speechSynthesis' in window)) {
+    document.querySelector('.tts-panel').style.display = 'none';
+    return;
+  }
+
+  function loadVoices() {
+    const voices = speechSynthesis.getVoices();
+
+    // Try to detect female voice
+    femaleVoice = voices.find(v =>
+      v.lang.startsWith('en') &&
+      (v.name.toLowerCase().includes('female') ||
+       v.name.toLowerCase().includes('zira') ||
+       v.name.toLowerCase().includes('samantha'))
+    );
+
+    // Try to detect male voice
+    maleVoice = voices.find(v =>
+      v.lang.startsWith('en') &&
+      (v.name.toLowerCase().includes('male') ||
+       v.name.toLowerCase().includes('david') ||
+       v.name.toLowerCase().includes('alex'))
+    );
+
+    // fallback
+    if (!femaleVoice) femaleVoice = voices.find(v => v.lang.startsWith('en'));
+    if (!maleVoice) maleVoice = voices.find(v => v.lang.startsWith('en'));
+
+    updateVoice();
+  }
+
+  loadVoices();
+
+  // important for browsers that load voices later
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function updateVoice() {
+  const val = document.getElementById('ttsVoiceSelect').value;
+  ttsSelectedVoice = (val === 'female') ? femaleVoice : maleVoice;
+}
+
+function toggleTTSAuto() {
+  ttsAutoSpeak = !ttsAutoSpeak;
+  const sw = document.getElementById('ttsSwitch');
+  sw.classList.toggle('on', ttsAutoSpeak);
+  document.getElementById('ttsAutoLabel').textContent =
+    ttsAutoSpeak ? 'Auto ON' : 'Auto Speak';
+}
+
+function speakWord(word) {
+  if (!word || word === '—') return;
+
+  window.speechSynthesis.cancel();
+
+  const utt = new SpeechSynthesisUtterance(word);
+  utt.rate = parseFloat(document.getElementById('ttsRate').value);
+
+  if (ttsSelectedVoice) utt.voice = ttsSelectedVoice;
+
+  utt.onstart = () => {
+    ttsSpeaking = true;
+    document.getElementById('ttsWordDisplay').classList.add('speaking');
+  };
+
+  utt.onend = utt.onerror = () => {
+    ttsSpeaking = false;
+    document.getElementById('ttsWordDisplay').classList.remove('speaking');
+  };
+
+  window.speechSynthesis.speak(utt);
+}
+
+function speakCurrent() {
+  if (ttsCurrentWord) speakWord(ttsCurrentWord);
+}
+
+function stopSpeech() {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    ttsSpeaking = false;
+    document.getElementById('ttsWordDisplay').classList.remove('speaking');
+  }
+}
+
+function updateTTSWord(word) {
+  ttsCurrentWord = word;
+  document.getElementById('ttsWord').textContent = word || '—';
+
+  const btn = document.getElementById('btnSpeak');
+  btn.disabled = !word || word === '—';
+
+  if (ttsAutoSpeak && word && word !== '—') {
+    speakWord(word);
+  }
+}
+
+// ---- INIT ----
+initTTS();
+checkAuth();
+</script>
+</body>
+</html>
